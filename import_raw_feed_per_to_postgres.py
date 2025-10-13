@@ -34,8 +34,8 @@ DB_CONFIG = {
 }
 
 TABLE_NAME = 'releases_raw_feed_per_export'
-# CSV_FOLDER_PATH = os.getenv('CSV_FOLDER_PATH', '20250922/raw_feed_per')
-CSV_FOLDER_PATH = os.path.join(os.getenv('CSV_FOLDER_PATH'), '20250922/raw_feed_per')
+# CSV_FOLDER_PATH = os.getenv('CSV_FOLDER_PATH', '20250922/raw_feed_per/csv')
+CSV_FOLDER_PATH = os.path.join(os.getenv('CSV_FOLDER_PATH'), '20250922/raw_feed_per/csv')
 
 # Column definitions for RAW_FEED_PER table
 COLUMN_DEFINITIONS = [
