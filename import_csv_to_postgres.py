@@ -34,7 +34,8 @@ DB_CONFIG = {
 TABLE_NAME = os.getenv('TABLE_NAME', 'releases_org_export')
 
 # CSV folder path - process all CSV files in this folder
-CSV_FOLDER_PATH = os.getenv('CSV_FOLDER_PATH', '20250922/org/csv')
+# CSV_FOLDER_PATH = os.getenv('CSV_FOLDER_PATH', '20250922/org/csv')
+CSV_FOLDER_PATH = os.path.join(os.getenv('CSV_FOLDER_PATH'), '20250922/org/csv')
 
 # Single CSV file path (optional, if you want to process just one file)
 CSV_FILE_PATH = os.getenv('CSV_FILE_PATH', None)

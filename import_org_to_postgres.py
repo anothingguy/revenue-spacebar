@@ -34,7 +34,8 @@ DB_CONFIG = {
 }
 
 TABLE_NAME = 'releases_org_export'
-CSV_FOLDER_PATH = os.getenv('CSV_FOLDER_PATH', '20250922/org/csv')
+# CSV_FOLDER_PATH = os.getenv('CSV_FOLDER_PATH', '20250922/org/csv')
+CSV_FOLDER_PATH = os.path.join(os.getenv('CSV_FOLDER_PATH'), '20250922/org/csv')
 
 # Column definitions for ORG table
 COLUMN_DEFINITIONS = [
