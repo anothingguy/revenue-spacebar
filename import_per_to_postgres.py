@@ -164,7 +164,7 @@ def get_csv_files(folder_path: str) -> List[str]:
 def create_table(cursor) -> None:
     logger.info(f"Creating table {TABLE_NAME}...")
     
-    cursor.execute(f"DROP TABLE IF EXISTS {TABLE_NAME} CASCADE")
+    # cursor.execute(f"DROP TABLE IF EXISTS {TABLE_NAME} CASCADE")
     
     columns_sql = []
     for col_name, col_type in COLUMN_DEFINITIONS:
