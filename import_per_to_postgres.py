@@ -182,6 +182,41 @@ def create_table(cursor) -> None:
     logger.info(f"✓ Table {TABLE_NAME} created")
 
 
+def is_csv_file_imported(cursor, csv_file_path: str) -> bool:
+    """
+    Test if the CSV data already imported by selecting the first row of data.
+    Returns True if first row in file already exists in table, otherwise False.
+    """
+    columns = [col_name for col_name, _ in COLUMN_DEFINITIONS]
+    try:
+        with open_csv_file(csv_file_path) as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                # Process the very first row only
+                processed_row = process_row(row)
+                # Build the WHERE clause with all fields in the row
+                where_clause_pieces = []
+                values = []
+                for i, value in enumerate(processed_row):
+                    col = columns[i]
+                    if value is None:
+                        where_clause_pieces.append(f"{col} IS NULL")
+                    else:
+                        where_clause_pieces.append(f"{col} = %s")
+                        values.append(value)
+                where_sql = " AND ".join(where_clause_pieces)
+                query = f"SELECT 1 FROM {TABLE_NAME} WHERE {where_sql} LIMIT 1"
+                cursor.execute(query, values)
+                if cursor.fetchone():
+                    logger.info(f"First row of {os.path.basename(csv_file_path)} is already in table.")
+                    return True
+                return False
+    except Exception as e:
+        logger.warning(f"Could not check if CSV {csv_file_path} is already imported: {e}")
+        return False
+    return False  # If file is empty, treat as not imported
+
+
 def import_csv_data(cursor, csv_file_path: str, batch_size: int = 1000) -> int:
     file_name = os.path.basename(csv_file_path)
     
@@ -233,6 +268,10 @@ def import_multiple_files(cursor, csv_files: List[str], batch_size: int = 1000) 
     for idx, csv_file in enumerate(csv_files, 1):
         try:
             file_name = os.path.basename(csv_file)
+            # Test if csv data already imported by select first row in data
+            if is_csv_file_imported(cursor, csv_file):
+                logger.info(f"[PER] [{idx}/{total_files}] {file_name}: Already imported, skipping.")
+                continue
             rows_imported = import_csv_data(cursor, csv_file, batch_size)
             total_rows += rows_imported
             
