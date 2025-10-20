@@ -178,22 +178,21 @@ def get_csv_files(folder_path: str) -> List[str]:
 def create_table(cursor) -> None:
     logger.info(f"Creating table {TABLE_NAME}...")
     
-    # cursor.execute(f"DROP TABLE IF EXISTS {TABLE_NAME} CASCADE")
-    
+    # Only create table if it does not already exist
     columns_sql = []
     for col_name, col_type in COLUMN_DEFINITIONS:
         columns_sql.append(f"{col_name} {col_type}")
-    
+
     create_query = f"""
-        CREATE TABLE {TABLE_NAME} (
+        CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
             id SERIAL PRIMARY KEY,
             {', '.join(columns_sql)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """
-    
+
     cursor.execute(create_query)
-    logger.info(f"✓ Table {TABLE_NAME} created")
+    logger.info(f"✓ Table {TABLE_NAME} created (or already exists)")
 
 
 def import_csv_data(cursor, csv_file_path: str, batch_size: int = 1000) -> int:
