@@ -39,7 +39,7 @@ DB_CONFIG = {
 
 TABLE_NAME = 'releases_per_export'
 # CSV_FOLDER_PATH = os.getenv('CSV_FOLDER_PATH', '20250922/per/csv')
-CSV_FOLDER_PATH = os.path.join(os.getenv('CSV_FOLDER_PATH'), '20250922/per/csv2')
+CSV_FOLDER_PATH = os.path.join(os.getenv('CSV_FOLDER_PATH'), '20250922/per/csv')
 
 # Column definitions for PER table
 COLUMN_DEFINITIONS = [

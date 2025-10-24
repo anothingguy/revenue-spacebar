@@ -11,9 +11,13 @@ import logging
 import gzip
 from pathlib import Path
 from typing import Optional, List
+from io import StringIO
 import psycopg2
 from psycopg2.extras import execute_batch
 import dotenv
+
+# Increase CSV field size limit to handle large fields
+csv.field_size_limit(sys.maxsize)
 
 dotenv.load_dotenv()
     
@@ -134,9 +138,9 @@ def process_row(row: dict) -> tuple:
 
 def open_csv_file(file_path: str):
     if file_path.endswith('.gz'):
-        return gzip.open(file_path, 'rt', encoding='utf-8')
+        return gzip.open(file_path, 'rt', encoding='utf-8', errors='replace')
     else:
-        return open(file_path, 'r', encoding='utf-8')
+        return open(file_path, 'r', encoding='utf-8', errors='replace')
 
 
 def get_csv_files(folder_path: str) -> List[str]:
@@ -174,6 +178,19 @@ def create_table(cursor) -> None:
     logger.info(f"✓ Table {TABLE_NAME} created")
 
 
+def safe_csv_reader(csvfile, max_field_size=1000000):
+    """Custom CSV reader that handles large fields by truncating them"""
+    reader = csv.DictReader(csvfile)
+    
+    for row in reader:
+        # Truncate any field that's too large
+        for key, value in row.items():
+            if value and len(str(value)) > max_field_size:
+                logger.debug(f"Truncating large field {key} from {len(str(value))} to {max_field_size} characters")
+                row[key] = str(value)[:max_field_size]
+        yield row
+
+
 def import_csv_data(cursor, csv_file_path: str, batch_size: int = 1000) -> int:
     file_name = os.path.basename(csv_file_path)
     
@@ -189,7 +206,16 @@ def import_csv_data(cursor, csv_file_path: str, batch_size: int = 1000) -> int:
     
     try:
         with open_csv_file(csv_file_path) as csvfile:
-            reader = csv.DictReader(csvfile)
+            # Read the entire content and clean NUL characters
+            content = csvfile.read()
+            # Remove NUL characters and other problematic characters
+            content = content.replace('\x00', '').replace('\x01', '').replace('\x02', '')
+            
+            # Create a StringIO object from the cleaned content
+            cleaned_csv = StringIO(content)
+            
+            # Use our safe CSV reader
+            reader = safe_csv_reader(cleaned_csv)
             
             for row in reader:
                 try:
@@ -210,8 +236,15 @@ def import_csv_data(cursor, csv_file_path: str, batch_size: int = 1000) -> int:
                 total_rows += len(batch)
     
     except Exception as e:
-        logger.error(f"Error reading {file_name}: {e}")
-        raise
+        if "NUL" in str(e) or "null" in str(e).lower():
+            logger.warning(f"Skipping {file_name} due to NUL characters - file may be corrupted")
+            return 0
+        elif "field larger than field limit" in str(e):
+            logger.warning(f"Skipping {file_name} due to field size limit exceeded - file may have very large fields")
+            return 0
+        else:
+            logger.error(f"Error reading {file_name}: {e}")
+            raise
     
     return total_rows
 
